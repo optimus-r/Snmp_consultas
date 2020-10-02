@@ -1,0 +1,46 @@
+
+import sys
+import subprocess
+from subprocess import Popen, PIPE
+
+h = open('archivo_con_ipes.txt', 'r')  # archivo donde estan las ips de los cablemodems a consultar
+c = 'comunidad'  # comunidad configurada en el cablemodem
+
+
+
+class Snmp:
+    def __init__(self, ip, com):
+        self.ip = ip
+        self.com = com
+
+    def firmware(self):
+        ip = self.ip
+        co = self.com
+        snmp ='SNMPv2-SMI::enterprises.4115.1.3.4.1.1.7.0' # oid para equipos Arris-CM
+        lis = []
+        for ip1 in ip:
+            comando = subprocess.Popen(['snmpget', '-v', '2c', '-Ov', ip1, '-c', co, snmp], stdout=PIPE, stderr=PIPE)
+            listado = comando.stdout.readlines()
+            listadoe = comando.stderr.readlines()
+            for eme in listado:
+                consulta = ip1 + eme.strip()
+                lis.append(consulta)
+
+        return lis
+
+
+llamada = Snmp(h, c)
+start = llamada.firmware()
+
+
+#######################################################################################################################################
+# aca importo la clase desde otra ubicacion y guardo el resultado en un archivo
+
+from mantis_snmp import start
+
+with open('guardo_resultadofinal_de_consulta', 'w') as file:
+ snmpbbt = start
+ for bbtarris in snmpbbt:
+  bbtarris1 = bbtarris.strip() 
+  file.write(bbtarris1 + '\n')
+  print bbtarris1
