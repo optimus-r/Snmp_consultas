@@ -1,0 +1,107 @@
+import sys
+import subprocess
+from subprocess import Popen, PIPE
+import re
+
+h = '127.0.0.1'  # sys.argv[1]
+c = 'comunidad'
+
+
+class Snmpcasasystem:
+
+    def __init__(self, ip, com):
+        self.ip = ip
+        self.com = com
+
+    def frecuencia(self):
+        ip = self.ip
+        co = self.com
+        lis = []
+        snm1 = 'ifadmin'
+        snm2 = 'ifDescr.'
+        frec = '1.3.6.1.2.1.10.127.1.1.2.1.2.'
+        com = subprocess.Popen(['snmpwalk', '-v', '2c', '-c', co, ip, snm1], stdout=PIPE, stderr=PIPE)
+        lista1 = com.stdout.read()
+        for m in lista1.splitlines():
+            ifaceoid = m.split('.')[1]  # index y estado de interface(up-down)
+            oid = ifaceoid.split()[0]   # index de las interfaces(up) del equipo
+            iface = ifaceoid.split()[3]
+            if iface == 'down(2)':
+                continue
+            com1 = subprocess.Popen(['snmpget', '-v', '2c', '-c', co, ip, snm2 + oid], stdout=PIPE, stderr=PIPE)
+            lista2 = com1.stdout.read()
+            for iface_n in lista2.splitlines():
+                totaliface = iface_n  # index y nombre de interfaces up
+                if re.search('Logical', totaliface):
+                    up = totaliface.split('.')[1].split('=')[0].strip()  # index de upstream activos en cmts
+                    com3 = subprocess.Popen(['snmpget', '-v', '2c', '-c', co, ip, frec + up], stdout=PIPE, stderr=PIPE)
+                    lista3 = com3.stdout.read()
+                    for frecu in lista3.splitlines():
+                        final_fre = 'Frecuencia en:' + frecu.split(':')[3] + ' de' + totaliface[41::]
+
+                        lis.append(final_fre)
+        return lis
+
+    def anchobanda(self):
+        ip = self.ip
+        co = self.com
+        lis = []
+        snm1 = 'ifadmin'
+        snm2 = 'ifDescr.'
+        frec = '1.3.6.1.2.1.10.127.1.1.2.1.3.'
+        com = subprocess.Popen(['snmpwalk', '-v', '2c', '-c', co, ip, snm1], stdout=PIPE, stderr=PIPE)
+        lista1 = com.stdout.read()
+        for m in lista1.splitlines():
+            ifaceoid = m.split('.')[1]  # index y estado de interface(up-down)
+            oid = ifaceoid.split()[0]   # index de las interfaces(up) del equipo
+            iface = ifaceoid.split()[3]
+            if iface == 'down(2)':
+                continue
+            com1 = subprocess.Popen(['snmpget', '-v', '2c', '-c', co, ip, snm2 + oid], stdout=PIPE, stderr=PIPE)
+            lista2 = com1.stdout.read()
+            for iface_n in lista2.splitlines():
+                totaliface = iface_n  # index y nombre de interfaces up
+                if re.search('Logical', totaliface):
+                    up = totaliface.split('.')[1].split('=')[0].strip()  # index de upstream activos en cmts
+                    com3 = subprocess.Popen(['snmpget', '-v', '2c', '-c', co, ip, frec + up], stdout=PIPE, stderr=PIPE)
+                    lista3 = com3.stdout.read()
+                    for frecu in lista3.splitlines():
+                        final_fre = 'Ancho-Banda en:' + frecu.split(':')[3] + ' de' + totaliface[41::]
+
+                        lis.append(final_fre)
+        return lis
+
+    def modulacionPro(self):
+        ip = self.ip
+        co = self.com
+        lis = []
+        snm1 = 'ifadmin'
+        snm2 = 'ifDescr.'
+        frec = '1.3.6.1.2.1.10.127.1.1.2.1.4.'
+        com = subprocess.Popen(['snmpwalk', '-v', '2c', '-c', co, ip, snm1], stdout=PIPE, stderr=PIPE)
+        lista1 = com.stdout.read()
+        for m in lista1.splitlines():
+            ifaceoid = m.split('.')[1]  # index y estado de interface(up-down)
+            oid = ifaceoid.split()[0]   # index de las interfaces(up) del equipo
+            iface = ifaceoid.split()[3]
+            if iface == 'down(2)':
+                continue
+            com1 = subprocess.Popen(['snmpget', '-v', '2c', '-c', co, ip, snm2 + oid], stdout=PIPE, stderr=PIPE)
+            lista2 = com1.stdout.read()
+            for iface_n in lista2.splitlines():
+                totaliface = iface_n  # index y nombre de interfaces up
+                if re.search('Logical', totaliface):
+                    up = totaliface.split('.')[1].split('=')[0].strip()  # index de upstream activos en cmts
+                    com3 = subprocess.Popen(['snmpget', '-v', '2c', '-c', co, ip, frec + up], stdout=PIPE, stderr=PIPE)
+                    lista3 = com3.stdout.read()
+                    for frecu in lista3.splitlines():
+                        final_fre = 'Modulacion-Profile:' + frecu.split(':')[3] + ' de' + totaliface[41::]
+
+                        lis.append(final_fre)
+        return lis
+
+
+llamo = Snmpcasasystem(h, c)
+frec = llamo.frecuencia()
+channelw = llamo.anchobanda()
+modul_p = llamo.modulacionPro()
