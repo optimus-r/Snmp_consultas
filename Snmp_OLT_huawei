@@ -1,0 +1,73 @@
+
+import sys
+import subprocess
+from subprocess import Popen, PIPE
+import re
+
+h = '127.0.0.1'
+c = 'comunidad'
+
+class Snmp:
+
+    def __init__(self, ip, com):
+        self.ip = ip
+        self.com = com
+
+    def ifadmin(self):
+        ip = self.ip
+        co = self.com
+        oid = 'ifdescr'  # descripcion de interface
+        oidS = '.1.3.6.1.4.1.2011.6.128.1.1.2.43.1.3.'  # oids trae los serial numbre
+        lis = []
+        com = subprocess.Popen(['snmpwalk', '-v', '2c', '-c', co, ip, oid], stdout=PIPE, stderr=PIPE)
+        resul = com.stdout.readlines()
+        for eme in resul:
+            consulta = eme.strip().split('=')
+            filt1 = consulta[0].split('.')[1].strip()
+            filt2 = consulta[1].split(':')[1]
+            if re.search('GPON', filt2):
+                for x in filt1.split():
+                    x1 = x.strip()
+                    com2 = subprocess.Popen(['snmpwalk', '-v', '2c', '-c', co, ip, oidS + x1], stdout=PIPE, stderr=PIPE)
+                    mu = com2.stdout.readlines()
+                    for gp in mu:
+                        ifont1 = filt2.split()[1]  # placa y puerto
+                        gen1 = gp.split('=')[0].split('.')[10::]  # descripcion iface y id
+                        ifont = gen1[0]  # description de interface ont
+                        ifid = gen1[1].strip()  # id de ont
+                        gen2 = gp.replace(' ', '').strip().split('=')[1].split(':')[1].strip()  # muestra el S/N de ont
+                        final = 'desc-port:' + ifont + ' ' + 'id-ont:' + ifid + ' serial-ONT:' + gen2 + ' ' + 'iface:' + ifont1
+                        lis.append(final)
+        return lis
+
+    def ipes(self):
+        ip = self.ip
+        co = self.com
+        oid = 'ifdescr'  # descripcion de interface
+        od = '.1.3.6.1.4.1.2011.6.128.1.1.2.43.1.3'  # ONT Mac/Serial
+        od1 = '.1.3.6.1.4.1.2011.6.128.1.1.2.49.1.2.'  # ips cpe de ont
+        fin = []
+        com = subprocess.Popen(['snmpwalk', '-v', '2c', '-c', co, ip, od], stdout=PIPE, stderr=PIPE)
+        resul = com.stdout.readlines()
+        for i in resul:
+            descif = i.split('=')[0]
+            snum = i.split('=')[1].split(':')[1].strip()
+            snum1 = snum.replace(' ', '').strip()  # serial num de las ont
+            descif1 = descif.replace('.', ' ')  # descif.split()
+            descif2 = descif1.split()[10::]
+            descif3 = ' '.join(descif2)
+            descif4 = descif3.replace(' ', '.').strip()  # descripicion y id de ont
+            for pone in descif4.split():
+                pone1 = pone.strip()
+                com2 = subprocess.Popen(['snmpwalk', '-v', '2c', '-Ov', ip, '-c', co, od1 + pone1], stdout=PIPE, stderr=PIPE)
+                res = com2.stdout.readlines()  # ipes pub-priv de todas la ont
+                for final in res:
+                    ipsn = final.strip() + ' ' + ' ----- ' + snum1
+                    fin.append(ipsn)
+        return fin
+
+
+llamada = Snmp(h, c)
+ipadd = llamada.ipes()
+for i in ipadd:
+    print i
